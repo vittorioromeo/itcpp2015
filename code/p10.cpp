@@ -185,7 +185,7 @@ public:
     // passata dall'utente su ogni entità di tipo `T`, "castandola"
     // automaticamente.
     template<typename T, typename TFunc> 
-    void forEach(const TFunc& mFunc)
+    void forEach(TFunc&& mFunc)
     {
         auto& vector(getAll<T>());
 
