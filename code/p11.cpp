@@ -107,7 +107,7 @@ public:
     }
 
     template<typename T, typename TFunc> 
-    void forEach(TFunc&& mFunc)
+    void forEach(TFunc mFunc)
     {
         for(auto ptr : getAll<T>()) 
             mFunc(*reinterpret_cast<T*>(ptr));
