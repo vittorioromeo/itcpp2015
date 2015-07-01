@@ -69,7 +69,9 @@ public:
         static_assert(std::is_base_of<Entity, T>(), 
             "`T` must derive from `Entity`");
 
-        auto uPtr(std::make_unique<T>(std::forward<TArgs>(mArgs)...));
+        auto uPtr(
+            std::make_unique<T>(std::forward<TArgs>(mArgs)...));
+
         auto ptr(uPtr.get());
         groupedEntities[typeid(T).hash_code()].emplace_back(ptr);
         entities.emplace_back(std::move(uPtr));
@@ -110,7 +112,7 @@ public:
     void forEach(TFunc mFunc)
     {
         for(auto ptr : getAll<T>()) 
-            mFunc(*reinterpret_cast<T*>(ptr));
+            mFunc(*static_cast<T*>(ptr));
     }
 
     void update()                           
@@ -236,9 +238,9 @@ const sf::Color Paddle::defColor{sf::Color::Red};
 class Brick : public Entity, public Rectangle
 {
 public:
-    static const sf::Color defColorHits1;
-    static const sf::Color defColorHits2;
-    static const sf::Color defColorHits3;
+    static const sf::Color defClHits1;
+    static const sf::Color defClHits2;
+    static const sf::Color defClHits3;
     static constexpr float defWidth{60.f}, defHeight{20.f};
     static constexpr float defVelocity{8.f};
 
@@ -256,9 +258,9 @@ public:
     {
         // Alteriamo il colore del mattoncino in base al numero di
         // colpi richiesti.
-        if(requiredHits == 1) shape.setFillColor(defColorHits1);
-        else if(requiredHits == 2) shape.setFillColor(defColorHits2);
-        else shape.setFillColor(defColorHits3);
+        if(requiredHits == 1) shape.setFillColor(defClHits1);
+        else if(requiredHits == 2) shape.setFillColor(defClHits2);
+        else shape.setFillColor(defClHits3);
     }
     void draw(sf::RenderWindow& mTarget) override 
     { 
@@ -266,11 +268,12 @@ public:
     }
 };
 
-const sf::Color Brick::defColorHits1{255, 255, 0, 80};
-const sf::Color Brick::defColorHits2{255, 255, 0, 170};
-const sf::Color Brick::defColorHits3{255, 255, 0, 255};
+const sf::Color Brick::defClHits1{255, 255, 0, 80};
+const sf::Color Brick::defClHits2{255, 255, 0, 170};
+const sf::Color Brick::defClHits3{255, 255, 0, 255};
 
-void solvePaddleBallCollision(const Paddle& mPaddle, Ball& mBall) noexcept
+void solvePaddleBallCollision(const Paddle& mPaddle, Ball& mBall) 
+    noexcept
 {
     if(!isIntersecting(mPaddle, mBall)) return;
 
@@ -282,7 +285,9 @@ void solvePaddleBallCollision(const Paddle& mPaddle, Ball& mBall) noexcept
     auto velFactor(mPaddle.velocity.x * 0.05f);
     
     sf::Vector2f collisionVec{posFactor + velFactor, -2.f};    
-    mBall.velocity = getReflected(mBall.velocity, getNormalized(collisionVec));   
+    
+    mBall.velocity =
+        getReflected(mBall.velocity, getNormalized(collisionVec));   
 }
 
 void solveBrickBallCollision(Brick& mBrick, Ball& mBall) noexcept
@@ -306,9 +311,11 @@ void solveBrickBallCollision(Brick& mBrick, Ball& mBall) noexcept
     auto minOverlapY(bFromTop ? overlapTop : overlapBottom);
 
     if(std::abs(minOverlapX) < std::abs(minOverlapY))   
-        mBall.velocity.x = std::abs(mBall.velocity.x) * (bFromLeft ? -1.f : 1.f);    
+        mBall.velocity.x = 
+            std::abs(mBall.velocity.x) * (bFromLeft ? -1.f : 1.f);    
     else                                         
-        mBall.velocity.y = std::abs(mBall.velocity.y) * (bFromTop ? -1.f : 1.f);    
+        mBall.velocity.y = 
+            std::abs(mBall.velocity.y) * (bFromTop ? -1.f : 1.f);    
 }
 
 class Game
@@ -374,7 +381,8 @@ public:
                 auto y((iY + brkStartRow) 
                     * (Brick::defHeight + brkSpacing));
 
-                auto& brick(manager.create<Brick>(brkOffsetX + x, y));
+                auto& brick(
+                    manager.create<Brick>(brkOffsetX + x, y));
 
                 // Settiamo il numero di colpi richiesti per la
                 // distruzione dei mattoncini usando un pattern

@@ -59,8 +59,8 @@ public:
 
     void update()
     {
-        // Le classi shape di SFML hanno un metodo `move` che prende
-        // come parametro un vettore `float` di offset.
+        // Le classi shape di SFML hanno un metodo `move` che 
+        // prende come parametro un vettore `float` di offset.
         // {Info: ball movement}
         shape.move(velocity);
     }
