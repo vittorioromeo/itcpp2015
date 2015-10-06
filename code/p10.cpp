@@ -9,10 +9,10 @@
 // di tali oggetti a run-time.
 
 // Necessiteremo di una gerarchia polimorfica per i nostri game
-// object, e di una classe `Manager` per semplificare la loro 
+// object, e di una classe `Manager` per semplificare la loro
 // gestione.
 
-// Utilizzeremo gli "smart pointers", contenuti nell'header 
+// Utilizzeremo gli "smart pointers", contenuti nell'header
 // `<memory>`, introdotto nello standard C++11.
 #include <memory>
 
@@ -23,35 +23,35 @@
 
 #include <SFML/Graphics.hpp>
 
-template<typename T>
+template <typename T>
 auto getLength(const T& mVec) noexcept
 {
     return std::sqrt(std::pow(mVec.x, 2) + std::pow(mVec.y, 2));
 }
 
-template<typename T>
+template <typename T>
 auto getNormalized(const sf::Vector2<T>& mVec) noexcept
 {
     return mVec / static_cast<T>(getLength(mVec));
 }
 
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 auto getDotProduct(const T1& mVec1, const T2& mVec2)
 {
-    return mVec1.x * mVec2.x + mVec1.y * mVec2.y;    
+    return mVec1.x * mVec2.x + mVec1.y * mVec2.y;
 }
 
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 auto getReflected(const T1& mVec, const T2& mNormal)
 {
     return mVec - (mNormal * (2.f * getDotProduct(mVec, mNormal)));
 }
 
-template<typename T1, typename T2> 
+template <typename T1, typename T2>
 bool isIntersecting(const T1& mA, const T2& mB) noexcept
 {
-    return  mA.right() >= mB.left() && mA.left() <= mB.right() 
-            && mA.bottom() >= mB.top() && mA.top() <= mB.bottom();
+    return mA.right() >= mB.left() && mA.left() <= mB.right() &&
+           mA.bottom() >= mB.top() && mA.top() <= mB.bottom();
 }
 
 constexpr unsigned int wndWidth{800}, wndHeight{600};
@@ -68,9 +68,9 @@ public:
 
     // Ricordiamoci la keyword `virtual` per abilitare il
     // polimorfismo.
-    virtual ~Entity() { }
-    virtual void update() { } 
-    virtual void draw(sf::RenderWindow& mTarget) { }
+    virtual ~Entity() {}
+    virtual void update() {}
+    virtual void draw(sf::RenderWindow& mTarget) {}
 };
 
 // Creiamo una classe `Manager` per creare/distruggere le
@@ -78,7 +78,7 @@ public:
 class Manager
 {
 private:
-    // Dato che le nostre entità adesso sono polimorfiche, 
+    // Dato che le nostre entità adesso sono polimorfiche,
     // dobbiamo conservarle nel "free store". Utilizzeremo un
     // `std::vector` di `std::unique_ptr` per contenerle.
     std::vector<std::unique_ptr<Entity>> entities;
@@ -101,24 +101,24 @@ public:
     // Il primo metodo che definiremo è `create`: dato un tipo `T`,
     // e un "variadic pack" di argomenti, esso costruirà un entità
     // di tipo `T`, la conserverà e restituirà una reference ad essa.
-    template<typename T, typename... TArgs> 
+    template <typename T, typename... TArgs>
     T& create(TArgs&&... mArgs)
     {
         // Controlliamo che `T` sia effettivamente parte della
         // gerarchia di game object con uno `static_assert`.
-        static_assert(std::is_base_of<Entity, T>(), 
-            "`T` must derive from `Entity`");
+        static_assert(
+            std::is_base_of<Entity, T>(), "`T` must derive from `Entity`");
 
-        // Adesso creiamo l'oggetto, usando `std::make_unique`. 
-        // Utilizzeremo il "perfect forwarding" per passare 
-        // correttamente i tipi dei parametri variadici al 
+        // Adesso creiamo l'oggetto, usando `std::make_unique`.
+        // Utilizzeremo il "perfect forwarding" per passare
+        // correttamente i tipi dei parametri variadici al
         // costruttore di `T`.
         auto uPtr(std::make_unique<T>(std::forward<TArgs>(mArgs)...));
 
         // Conserviamo il "raw pointer" all'oggetto appena creato.
         auto ptr(uPtr.get());
 
-        // Calcoliamo l'hash per il tipo `T` usando la keyword 
+        // Calcoliamo l'hash per il tipo `T` usando la keyword
         // `typeid`. Lo utilizzeremo come chiave per il nostro
         // "database" di oggetti.
         groupedEntities[typeid(T).hash_code()].emplace_back(ptr);
@@ -133,58 +133,61 @@ public:
         entities.emplace_back(std::move(uPtr));
 
         return *ptr;
-    }   
+    }
 
-    // La rimozione delle entità funzionerà in questo modo: invece 
-    // di rimuovere direttamente un'entità dallo storage, la 
+    // La rimozione delle entità funzionerà in questo modo: invece
+    // di rimuovere direttamente un'entità dallo storage, la
     // marcheremo solamente come "destroyed". Il metodo `refresh` si
     // occuperà di "ripulire" tutte le entità marcate in un colpo
     // solo, alla fine di un `update`. Ciò migliora la performance e
-    // ci permette di accedere ad entità prossime alla distruzione 
+    // ci permette di accedere ad entità prossime alla distruzione
     // durante il resto del game loop.
     void refresh()
     {
-        // Iniziamo a ripulire `groupedEntities`. 
+        // Iniziamo a ripulire `groupedEntities`.
         // Useremo l'"erase-remove idiom" su ogni suo vettore.
         for(auto& pair : groupedEntities)
         {
             auto& vector(pair.second);
 
-            vector.erase(
-                std::remove_if(std::begin(vector), std::end(vector), 
-                [](auto mPtr){ return mPtr->destroyed; }), 
-                std::end(vector)
-            );
+            vector.erase(std::remove_if(std::begin(vector), std::end(vector),
+                             [](auto mPtr)
+                             {
+                                 return mPtr->destroyed;
+                             }),
+                std::end(vector));
         }
 
-        // Dopodichè faremo lo stesso per `entities`. Dato che esso 
-        // contiene smart pointers, la memoria allocata per le 
+        // Dopodichè faremo lo stesso per `entities`. Dato che esso
+        // contiene smart pointers, la memoria allocata per le
         // entità distrutte verrà liberata automaticamente.
-        entities.erase(
-            std::remove_if(std::begin(entities), std::end(entities), 
-            [](const auto& mUPtr){ return mUPtr->destroyed; }),
-            std::end(entities)
-        );
+        entities.erase(std::remove_if(std::begin(entities), std::end(entities),
+                           [](const auto& mUPtr)
+                           {
+                               return mUPtr->destroyed;
+                           }),
+            std::end(entities));
     }
 
     // Ci servirà anche un metodo `clear` per ripulire il manager.
-    void clear() 
-    { 
-        groupedEntities.clear(); 
-        entities.clear(); 
+    void clear()
+    {
+        groupedEntities.clear();
+        entities.clear();
     }
 
     // Specificando il tipo `T` e chiamando `getAll`, l'utente
     // otterrà tutte le entità di quel tipo.
-    template<typename T> auto& getAll() 
-    { 
-        return groupedEntities[typeid(T).hash_code()]; 
+    template <typename T>
+    auto& getAll()
+    {
+        return groupedEntities[typeid(T).hash_code()];
     }
 
     // Un metodo utilissimo sarà `forEach`, che ripeterà una funzione
     // passata dall'utente su ogni entità di tipo `T`, "castandola"
     // automaticamente.
-    template<typename T, typename TFunc> 
+    template <typename T, typename TFunc>
     void forEach(TFunc mFunc)
     {
         auto& vector(getAll<T>());
@@ -194,17 +197,17 @@ public:
         // dereferenziato.
         for(auto ptr : vector) mFunc(*static_cast<T*>(ptr));
     }
-    
+
     // Implementeremo infine metodi per aggiornare e renderizzare
     // tutte le entità.
 
-    void update()                           
-    { 
-        for(auto& e : entities) e->update(); 
+    void update()
+    {
+        for(auto& e : entities) e->update();
     }
-    void draw(sf::RenderWindow& mTarget)    
-    { 
-        for(auto& e : entities) e->draw(mTarget); 
+    void draw(sf::RenderWindow& mTarget)
+    {
+        for(auto& e : entities) e->draw(mTarget);
     }
 };
 
@@ -212,27 +215,27 @@ struct Rectangle
 {
     sf::RectangleShape shape;
 
-    float x() const noexcept        { return shape.getPosition().x; }
-    float y() const noexcept        { return shape.getPosition().y; }
-    float width() const noexcept    { return shape.getSize().x; }
-    float height() const noexcept   { return shape.getSize().y; }
-    float left() const noexcept     { return x() - width() / 2.f; }
-    float right() const noexcept    { return x() + width() / 2.f; }
-    float top() const noexcept      { return y() - height() / 2.f; }
-    float bottom() const noexcept   { return y() + height() / 2.f; }
+    float x() const noexcept { return shape.getPosition().x; }
+    float y() const noexcept { return shape.getPosition().y; }
+    float width() const noexcept { return shape.getSize().x; }
+    float height() const noexcept { return shape.getSize().y; }
+    float left() const noexcept { return x() - width() / 2.f; }
+    float right() const noexcept { return x() + width() / 2.f; }
+    float top() const noexcept { return y() - height() / 2.f; }
+    float bottom() const noexcept { return y() + height() / 2.f; }
 };
 
 struct Circle
 {
     sf::CircleShape shape;
 
-    float x() const noexcept        { return shape.getPosition().x; }
-    float y() const noexcept        { return shape.getPosition().y; }
-    float radius() const noexcept   { return shape.getRadius(); }
-    float left() const noexcept     { return x() - radius(); }
-    float right() const noexcept    { return x() + radius(); }
-    float top() const noexcept      { return y() - radius(); }
-    float bottom() const noexcept   { return y() + radius(); }
+    float x() const noexcept { return shape.getPosition().x; }
+    float y() const noexcept { return shape.getPosition().y; }
+    float radius() const noexcept { return shape.getRadius(); }
+    float left() const noexcept { return x() - radius(); }
+    float right() const noexcept { return x() + radius(); }
+    float top() const noexcept { return y() - radius(); }
+    float bottom() const noexcept { return y() + radius(); }
 };
 
 // Adattiamo le nostre classi alla nuova architettura.
@@ -261,15 +264,12 @@ public:
         solveBoundCollisions();
     }
 
-    void draw(sf::RenderWindow& mTarget) override 
-    { 
-        mTarget.draw(shape); 
-    }
+    void draw(sf::RenderWindow& mTarget) override { mTarget.draw(shape); }
 
 private:
     void solveBoundCollisions() noexcept
     {
-        if(left() < 0 || right() > wndWidth) velocity.x *= -1.f;        
+        if(left() < 0 || right() > wndWidth) velocity.x *= -1.f;
         if(top() < 0 || bottom() > wndHeight) velocity.y *= -1.f;
     }
 };
@@ -285,8 +285,8 @@ public:
 
     sf::Vector2f velocity;
 
-    Paddle(float mX, float mY) 
-    { 
+    Paddle(float mX, float mY)
+    {
         shape.setPosition(mX, mY);
         shape.setSize({defWidth, defHeight});
         shape.setFillColor(defColor);
@@ -299,19 +299,18 @@ public:
         shape.move(velocity);
     }
 
-    void draw(sf::RenderWindow& mTarget) override 
-    { 
-        mTarget.draw(shape); 
-    }
+    void draw(sf::RenderWindow& mTarget) override { mTarget.draw(shape); }
 
 private:
     void processPlayerInput()
     {
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) 
-            && left() > 0) velocity.x = -defVelocity;
-        else if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right) 
-            && right() < wndWidth) velocity.x = defVelocity;
-        else velocity.x = 0;    
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) && left() > 0)
+            velocity.x = -defVelocity;
+        else if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right) &&
+                right() < wndWidth)
+            velocity.x = defVelocity;
+        else
+            velocity.x = 0;
     }
 };
 
@@ -324,18 +323,15 @@ public:
     static constexpr float defWidth{60.f}, defHeight{20.f};
     static constexpr float defVelocity{8.f};
 
-    Brick(float mX, float mY) 
-    { 
+    Brick(float mX, float mY)
+    {
         shape.setPosition(mX, mY);
         shape.setSize({defWidth, defHeight});
         shape.setFillColor(defColor);
         shape.setOrigin(defWidth / 2.f, defHeight / 2.f);
     }
 
-    void draw(sf::RenderWindow& mTarget) override 
-    { 
-        mTarget.draw(shape); 
-    }
+    void draw(sf::RenderWindow& mTarget) override { mTarget.draw(shape); }
 };
 
 const sf::Color Brick::defColor{sf::Color::Yellow};
@@ -350,9 +346,9 @@ void solvePaddleBallCollision(const Paddle& mPaddle, Ball& mBall) noexcept
     auto paddleBallDiff(mBall.x() - mPaddle.x());
     auto posFactor(paddleBallDiff / mPaddle.width());
     auto velFactor(mPaddle.velocity.x * 0.05f);
-    
-    sf::Vector2f collisionVec{posFactor + velFactor, -2.f};    
-    mBall.velocity = getReflected(mBall.velocity, getNormalized(collisionVec));   
+
+    sf::Vector2f collisionVec{posFactor + velFactor, -2.f};
+    mBall.velocity = getReflected(mBall.velocity, getNormalized(collisionVec));
 }
 
 void solveBrickBallCollision(Brick& mBrick, Ball& mBall) noexcept
@@ -371,20 +367,25 @@ void solveBrickBallCollision(Brick& mBrick, Ball& mBall) noexcept
     auto minOverlapX(bFromLeft ? overlapLeft : overlapRight);
     auto minOverlapY(bFromTop ? overlapTop : overlapBottom);
 
-    if(std::abs(minOverlapX) < std::abs(minOverlapY))   
-        mBall.velocity.x = std::abs(mBall.velocity.x) * (bFromLeft ? -1.f : 1.f);    
-    else                                         
-        mBall.velocity.y = std::abs(mBall.velocity.y) * (bFromTop ? -1.f : 1.f);    
+    if(std::abs(minOverlapX) < std::abs(minOverlapY))
+        mBall.velocity.x =
+            std::abs(mBall.velocity.x) * (bFromLeft ? -1.f : 1.f);
+    else
+        mBall.velocity.y = std::abs(mBall.velocity.y) * (bFromTop ? -1.f : 1.f);
 }
 
 class Game
 {
 private:
-    enum class State{Paused, InProgress};
-    
-    static constexpr int brkCountX{11}, brkCountY{4};       
-    static constexpr int brkStartCol{1}, brkStartRow{2};     
-    static constexpr float brkSpacing{3.f}, brkOffsetX{22.f};   
+    enum class State
+    {
+        Paused,
+        InProgress
+    };
+
+    static constexpr int brkCountX{11}, brkCountY{4};
+    static constexpr int brkStartCol{1}, brkStartRow{2};
+    static constexpr float brkSpacing{3.f}, brkOffsetX{22.f};
 
     sf::RenderWindow window{{wndWidth, wndHeight}, "Arkanoid - 10"};
 
@@ -392,7 +393,7 @@ private:
     Manager manager;
 
     State state{State::InProgress};
-    bool pausePressedLastFrame{false};  
+    bool pausePressedLastFrame{false};
 
 public:
     Game() { window.setFramerateLimit(60); }
@@ -400,19 +401,17 @@ public:
     void restart()
     {
         state = State::Paused;
-        
+
         // Durante il restart, ripuliremo il manager.
         manager.clear();
 
-        for(int iX{0}; iX < brkCountX; ++iX)    
-            for(int iY{0}; iY < brkCountY; ++iY)        
+        for(int iX{0}; iX < brkCountX; ++iX)
+            for(int iY{0}; iY < brkCountY; ++iY)
             {
-                auto x((iX + brkStartCol) 
-                    * (Brick::defWidth + brkSpacing));
-                auto y((iY + brkStartRow) 
-                    * (Brick::defHeight + brkSpacing));
-                
-                // Creare game object attraverso il manager è 
+                auto x((iX + brkStartCol) * (Brick::defWidth + brkSpacing));
+                auto y((iY + brkStartRow) * (Brick::defHeight + brkSpacing));
+
+                // Creare game object attraverso il manager è
                 // veramente semplice e conveniente:
                 manager.create<Brick>(brkOffsetX + x, y);
             }
@@ -427,73 +426,74 @@ public:
         {
             window.clear(sf::Color::Black);
 
-            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) 
-                break;
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) break;
 
             if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::P))
             {
-                if(!pausePressedLastFrame) 
+                if(!pausePressedLastFrame)
                 {
-                    if(state == State::Paused) 
+                    if(state == State::Paused)
                         state = State::InProgress;
-                    else if(state == State::InProgress) 
+                    else if(state == State::InProgress)
                         state = State::Paused;
                 }
                 pausePressedLastFrame = true;
-            }               
-            else pausePressedLastFrame = false;
+            }
+            else
+                pausePressedLastFrame = false;
 
-            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)) 
-                restart();
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)) restart();
 
             if(state != State::Paused)
             {
-                // Invece di manualmente aggiornare ogni entità, 
+                // Invece di manualmente aggiornare ogni entità,
                 // lasciamo fare questo lavoro al manager.
                 manager.update();
-                
-                // La logica di gioco è molto più generica adesso: 
+
+                // La logica di gioco è molto più generica adesso:
                 // basta chiedere al manager di restituirci tutte le
-                // entità di un tipo specifico per gestire le 
+                // entità di un tipo specifico per gestire le
                 // interazioni tra di esse.
                 // Aggiungere nuovi tipi di game object non sarà
                 // un problema in futuro.
                 manager.forEach<Ball>([this](auto& mBall)
-                {
-                    manager.forEach<Brick>([&mBall](auto& mBrick)
                     {
-                        solveBrickBallCollision(mBrick, mBall);
+                        manager.forEach<Brick>([&mBall](auto& mBrick)
+                            {
+                                solveBrickBallCollision(mBrick, mBall);
+                            });
+                        manager.forEach<Paddle>([&mBall](auto& mPaddle)
+                            {
+                                solvePaddleBallCollision(mPaddle, mBall);
+                            });
                     });
-                    manager.forEach<Paddle>([&mBall](auto& mPaddle)
-                    {
-                        solvePaddleBallCollision(mPaddle, mBall);
-                    });
-                });
 
-                // Dopo gli `update`, non dimentichiamoci di 
+                // Dopo gli `update`, non dimentichiamoci di
                 // chiamare `refresh` per distruggere le entità
                 // marcate "destroyed".
                 manager.refresh();
             }
-            
+
             manager.draw(window);
             window.display();
-        }   
+        }
     }
 };
 
 
-int main() 
+int main()
 {
-    Game game; game.restart(); game.run();
+    Game game;
+    game.restart();
+    game.run();
     return 0;
 }
 
-// Il codice è adesso molto più complesso, ma i vantaggi offerti 
-// allo sviluppatore da questo tipo di architettura sono davvero 
+// Il codice è adesso molto più complesso, ma i vantaggi offerti
+// allo sviluppatore da questo tipo di architettura sono davvero
 // notevoli.
 
-// Utilizzare un manager per gestire le entità semplifica 
+// Utilizzare un manager per gestire le entità semplifica
 // l'eventuale aggiunta o rimozione di tipi di game object,
 // e permette al developer di scrivere codice più pulito ed
 // intuitivo.

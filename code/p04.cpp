@@ -2,7 +2,7 @@
 // License: MIT License | http://opensource.org/licenses/MIT
 // http://vittorioromeo.info | vittorio.romeo@outlook.com
 
-// Ci mancano ancora due importanti elementi: il "paddle" 
+// Ci mancano ancora due importanti elementi: il "paddle"
 // e i mattoncini. Inizieremo implementando un paddle controllato
 // dal giocatore in questo segmento di codice.
 
@@ -36,20 +36,20 @@ public:
 
     void draw(sf::RenderWindow& mTarget) { mTarget.draw(shape); }
 
-    float x() const noexcept        { return shape.getPosition().x; }
-    float y() const noexcept        { return shape.getPosition().y; }
-    float left() const noexcept     { return x() - shape.getRadius(); }
-    float right() const noexcept    { return x() + shape.getRadius(); }
-    float top() const noexcept      { return y() - shape.getRadius(); }
-    float bottom() const noexcept   { return y() + shape.getRadius(); }
+    float x() const noexcept { return shape.getPosition().x; }
+    float y() const noexcept { return shape.getPosition().y; }
+    float left() const noexcept { return x() - shape.getRadius(); }
+    float right() const noexcept { return x() + shape.getRadius(); }
+    float top() const noexcept { return y() - shape.getRadius(); }
+    float bottom() const noexcept { return y() + shape.getRadius(); }
 
 private:
     // Un semplice refactoring ("extract function") migliora sempre
     // la leggibilità del codice.
     void solveBoundCollisions() noexcept
     {
-        if(left() < 0 || right() > wndWidth) velocity.x *= -1.f;        
-        if(top() < 0 || bottom() > wndHeight) velocity.y *= -1.f;     
+        if(left() < 0 || right() > wndWidth) velocity.x *= -1.f;
+        if(top() < 0 || bottom() > wndHeight) velocity.y *= -1.f;
     }
 };
 
@@ -69,10 +69,10 @@ public:
     sf::RectangleShape shape;
     sf::Vector2f velocity;
 
-    // Come per la pallina, costruiamo il paddle passando la 
+    // Come per la pallina, costruiamo il paddle passando la
     // posizione iniziale ed inizializziando la forma SFML.
-    Paddle(float mX, float mY) 
-    { 
+    Paddle(float mX, float mY)
+    {
         shape.setPosition(mX, mY);
         shape.setSize({defWidth, defHeight});
         shape.setFillColor(defColor);
@@ -89,14 +89,14 @@ public:
 
     void draw(sf::RenderWindow& mTarget) { mTarget.draw(shape); }
 
-    float x() const noexcept        { return shape.getPosition().x; }
-    float y() const noexcept        { return shape.getPosition().y; }
-    float width() const noexcept    { return shape.getSize().x; }
-    float height() const noexcept   { return shape.getSize().y; }
-    float left() const noexcept     { return x() - width() / 2.f; }
-    float right() const noexcept    { return x() + width() / 2.f; }
-    float top() const noexcept      { return y() - height() / 2.f; }
-    float bottom() const noexcept   { return y() + height() / 2.f; }
+    float x() const noexcept { return shape.getPosition().x; }
+    float y() const noexcept { return shape.getPosition().y; }
+    float width() const noexcept { return shape.getSize().x; }
+    float height() const noexcept { return shape.getSize().y; }
+    float left() const noexcept { return x() - width() / 2.f; }
+    float right() const noexcept { return x() + width() / 2.f; }
+    float top() const noexcept { return y() - height() / 2.f; }
+    float bottom() const noexcept { return y() + height() / 2.f; }
 
 private:
     void processPlayerInput()
@@ -107,27 +107,26 @@ private:
         //   X ad un valore negativo.
         // * Se la freccia destra è pressata, settiamo la velocità X
         //   ad un valore positivo.
-        // * Se nessuna delle due freccie è pressata, settiamo la 
+        // * Se nessuna delle due freccie è pressata, settiamo la
         //   velocità X a zero.
 
-        // Non applicheremo alcun cambio di velocità se potrebbe 
+        // Non applicheremo alcun cambio di velocità se potrebbe
         // spingere il paddle "fuori dalla finestra".
 
         // Quindi, se l'utente sta cercando di muovere il paddle
         // verso destra, ma esso è già fuori in quella direzione,
         // eviteremo di modificare la velocità.
 
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) 
-            && left() > 0) 
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) && left() > 0)
         {
             velocity.x = -defVelocity;
         }
-        else if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right) 
-            && right() < wndWidth) 
+        else if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right) &&
+                right() < wndWidth)
         {
             velocity.x = defVelocity;
         }
-        else 
+        else
         {
             velocity.x = 0;
         }
@@ -136,7 +135,7 @@ private:
 
 const sf::Color Paddle::defColor{sf::Color::Red};
 
-int main() 
+int main()
 {
     Ball ball{wndWidth / 2.f, wndHeight / 2.f};
 
@@ -150,8 +149,7 @@ int main()
     {
         window.clear(sf::Color::Black);
 
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) 
-            break;
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) break;
 
         // ...non dimentichiamoci di chiamare `update()` e `draw()`.
 
@@ -162,7 +160,7 @@ int main()
         paddle.draw(window);
 
         window.display();
-    }   
+    }
 
     return 0;
 }

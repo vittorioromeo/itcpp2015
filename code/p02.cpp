@@ -3,8 +3,8 @@
 // http://vittorioromeo.info | vittorio.romeo@outlook.com
 
 // In questo segmento di codice inizieremo ad implementare il
-// primo "game object": la pallina. Creeremo una classe per 
-// lei e impareremo ad usare le classi "shape" di SFML per 
+// primo "game object": la pallina. Creeremo una classe per
+// lei e impareremo ad usare le classi "shape" di SFML per
 // renderizzarla e muoverla.
 
 #include <SFML/Graphics.hpp>
@@ -38,7 +38,7 @@ public:
     Ball(float mX, float mY)
     {
         // SFML usa un sistema di coordinate avente l'origine
-        // posizionata nell'angolo in alto a sinistra della 
+        // posizionata nell'angolo in alto a sinistra della
         // finestra.
         // {Info: coordinate system}
 
@@ -59,7 +59,7 @@ public:
 
     void update()
     {
-        // Le classi shape di SFML hanno un metodo `move` che 
+        // Le classi shape di SFML hanno un metodo `move` che
         // prende come parametro un vettore `float` di offset.
         // {Info: ball movement}
         shape.move(velocity);
@@ -77,12 +77,12 @@ public:
 // fuori dalla definizione della classe.
 const sf::Color Ball::defColor{sf::Color::Red};
 
-int main() 
+int main()
 {
     // Creiamo un'istanza di `Ball`, posizionata al centro della
     // finestra.
     Ball ball{wndWidth / 2.f, wndHeight / 2.f};
-    
+
     sf::RenderWindow window{{wndWidth, wndHeight}, "Arkanoid - 2"};
     window.setFramerateLimit(60);
 
@@ -90,16 +90,15 @@ int main()
     {
         window.clear(sf::Color::Black);
 
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) 
-            break;
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) break;
 
-        // Nel game loop, dobbiamo ricordarci di chiamare `update`  
+        // Nel game loop, dobbiamo ricordarci di chiamare `update`
         // e `draw` per tutte le entità di gioco.
         ball.update();
         ball.draw(window);
 
         window.display();
-    }   
+    }
 
     return 0;
 }
